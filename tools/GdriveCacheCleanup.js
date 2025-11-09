@@ -6,19 +6,19 @@ const googleDrive = new GoogleDrive();
 async function cleanCache(folderId, cacheName) {
     try {
         console.log(`Cleaning ${cacheName} cache...`);
-        const concurrencyLimit = 100; // Increased concurrency limit
+        const concurrencyLimit = 100;
         let totalDeletedCount = 0;
         let filesFetched = true;
 
         while (filesFetched) {
-            const files = await googleDrive.listFiles(folderId); // Fetch up to 100 files
+            const files = await googleDrive.listFiles(folderId);
             filesFetched = files.length > 0;
 
             if (files.length === 0) {
                 if (totalDeletedCount === 0) {
                     console.log(`${cacheName} cache is already empty.`);
                 }
-                break; // No more files to delete
+                break;
             }
 
             console.log(`\nFetched ${files.length} files for ${cacheName} cache. Deleting in batches...`);
@@ -39,10 +39,10 @@ async function cleanCache(folderId, cacheName) {
 
                 if (deletePromises.length >= concurrencyLimit || i === files.length - 1) {
                     await Promise.all(deletePromises);
-                    deletePromises.length = 0; // Clear the array for the next batch
+                    deletePromises.length = 0;
                 }
             }
-            process.stdout.write('\n'); // New line after progress bar for the current batch
+            process.stdout.write('\n');
         }
         console.log(`${cacheName} cache cleanup finished. Total deleted: ${totalDeletedCount} items.`);
     } catch (error) {
