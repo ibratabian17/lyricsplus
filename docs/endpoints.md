@@ -10,27 +10,53 @@ All primary API endpoints are organized modularly within the `src/modules/` dire
 
 ### Lyrics Retrieval
 
+#### Search Priority with Multiple Identifiers
+
+When both `title`/`artist` and an `isrc` or `platformId` are provided in a lyrics retrieval request, the system prioritizes accuracy by leveraging all available information:
+
+1.  **Full Search Scope**: The system performs a comprehensive search across all configured lyric sources (including external APIs like Apple Music, Musixmatch, and Spotify), not just the local cache.
+2.  **Cache Lookup**: During the initial cache check, if a cached entry matches the provided `isrc` or `platformId`, it is considered a perfect match and is returned immediately. This ensures that specific versions identified by an ID are prioritized.
+3.  **External API Disambiguation**: If the song is not found in the cache, external APIs are queried using the `title` and `artist`. The provided `isrc` or `platformId` is then used to filter and select the most accurate song from the results returned by the external service.
+
+This approach ensures that providing an `isrc` or `platformId` alongside `title` and `artist` yields the most precise result possible, whether from cached data or external providers.
+
 *   **`GET /v1/lyrics/get`**
-    *   **Description**: Fetches synchronized lyrics for a given song in a legacy format, primarily for older YouLy+ clients.
+    *   **Description**: Fetches synchronized lyrics for a given song in a legacy format, primarily for older YouLy+ clients. Searches can be performed using `title` and `artist`, or by providing an `isrc` or `platformId` for a direct cache lookup.
     *   **Parameters**:
-        *   `title` (required): The title of the song.
-        *   `artist` (required): The artist of the song.
+        *   `title` (conditional): The title of the song. Required if `isrc` and `platformId` are not provided.
+        *   `artist` (conditional): The artist of the song. Required if `isrc` and `platformId` are not provided.
         *   `album` (optional): The album of the song.
         *   `duration` (optional): The duration of the song in milliseconds.
-        *   `isrc` (optional): The ISRC of the song.
-        *   `platformId` (optional): The platform-specific ID of the song. (appleMusicId/musixmatchTrackId,SpotifySongId)
+        *   `isrc` (conditional): The ISRC of the song. Can be used as an alternative to `title` and `artist` for cached lookups.
+        *   `platformId` (conditional): The platform-specific ID of the song (e.g., Apple Music ID, Musixmatch Track ID, Spotify Song ID). Can be used as an alternative to `title` and `artist` for cached lookups.
         *   `source` (optional): Comma-separated list of preferred lyric sources (e.g., `musixmatch,spotify`).
         *   `forceReload` (optional): Set to `true` to bypass cache and force a reload of lyrics.
     *   **Response**: Returns lyrics in a legacy format (v1).
 
 *   **`GET /v2/lyrics/get`**
-    *   **Description**: Fetches synchronized lyrics for a given song in an improved format with better word-grouping.
-    *   **Parameters**: (Same as `/v1/lyrics/get`)
+    *   **Description**: Fetches synchronized lyrics for a given song in an improved format with better word-grouping. Searches can be performed using `title` and `artist`, or by providing an `isrc` or `platformId` for a direct cache lookup.
+    *   **Parameters**:
+        *   `title` (conditional): The title of the song. Required if `isrc` and `platformId` are not provided.
+        *   `artist` (conditional): The artist of the song. Required if `isrc` and `platformId` are not provided.
+        *   `album` (optional): The album of the song.
+        *   `duration` (optional): The duration of the song in milliseconds.
+        *   `isrc` (conditional): The ISRC of the song. Can be used as an alternative to `title` and `artist` for cached lookups.
+        *   `platformId` (conditional): The platform-specific ID of the song (e.g., Apple Music ID, Musixmatch Track ID, Spotify Song ID). Can be used as an alternative to `title` and `artist` for cached lookups.
+        *   `source` (optional): Comma-separated list of preferred lyric sources (e.g., `musixmatch,spotify`).
+        *   `forceReload` (optional): Set to `true` to bypass cache and force a reload of lyrics.
     *   **Response**: Returns lyrics in the default format (v2).
 
 *   **`GET /v1/ttml/get`**
-    *   **Description**: Retrieves lyrics specifically formatted in TTML (Timed Text Markup Language), often used for Apple Music applications.
-    *   **Parameters**: (Same as `/v1/lyrics/get`)
+    *   **Description**: Retrieves lyrics specifically formatted in TTML (Timed Text Markup Language), often used for Apple Music applications. Searches can be performed using `title` and `artist`, or by providing an `isrc` or `platformId` for a direct cache lookup.
+    *   **Parameters**:
+        *   `title` (conditional): The title of the song. Required if `isrc` and `platformId` are not provided.
+        *   `artist` (conditional): The artist of the song. Required if `isrc` and `platformId` are not provided.
+        *   `album` (optional): The album of the song.
+        *   `duration` (optional): The duration of the song in milliseconds.
+        *   `isrc` (conditional): The ISRC of the song. Can be used as an alternative to `title` and `artist` for cached lookups.
+        *   `platformId` (conditional): The platform-specific ID of the song (e.g., Apple Music ID, Musixmatch Track ID, Spotify Song ID). Can be used as an alternative to `title` and `artist` for cached lookups.
+        *   `source` (optional): Comma-separated list of preferred lyric sources (e.g., `musixmatch,spotify`).
+        *   `forceReload` (optional): Set to `true` to bypass cache and force a reload of lyrics.
     *   **Response**: Returns lyrics content in Apple's TTML format.
 
 ### Song Catalog

@@ -52,6 +52,16 @@ export const SPOTIFY = {
     ]
 };
 
+export const MUSIXMATCH = {
+    ACCOUNTS: [
+        {
+            NAMEID: "Musixmatch-Guest",
+            USER_AGENT: process.env.MUSIXMATCH_USER_AGENT || 'PostmanRuntime/7.33.0',
+            COOKIE: process.env.MUSIXMATCH_COOKIE || 'AWSELB=55578B011601B1EF8BC274C33F9043CA947F99DCFF0A80541772015CA2B39C35C0F9E1C932D31725A7310BCAEB0C37431E024E2B45320B7F2C84490C2C97351FDE34690157'
+        }
+    ]
+};
+
 export const JWT_SECRET = process.env.JWT_SECRET || "lyricsplus-submit-opensource-yes-yes-yes";
 
 export class AccountManager {
@@ -85,3 +95,4 @@ export class AccountManager {
 
 export const appleMusicAccountManager = new AccountManager(APPLE_MUSIC.ACCOUNTS);
 export const spotifyAccountManager = new AccountManager(SPOTIFY.ACCOUNTS);
+export const musixmatchAccountManager = new AccountManager(MUSIXMATCH.ACCOUNTS);

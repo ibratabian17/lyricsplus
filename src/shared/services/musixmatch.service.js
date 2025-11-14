@@ -2,11 +2,10 @@ import { DbHandler } from "../utils/db.util.js";
 import { SimilarityUtils } from "../utils/similarity.util.js";
 import { FileUtils } from "../utils/file.util.js";
 import { convertMusixmatchToJSON } from "../parsers/musixmatch.parser.js";
+import { musixmatchAccountManager } from "../config.js";
 
 const MUSIXMATCH_BASE_URL = 'https://apic-desktop.musixmatch.com/ws/1.1';
-const USER_AGENT = 'PostmanRuntime/7.33.0';
 const TOKEN_KEY = 'musixmatch_token';
-const DEFAULT_COOKIE = 'AWSELB=55578B011601B1EF8BC274C33F9043CA947F99DCFF0A80541772015CA2B39C35C0F9E1C932D31725A7310BCAEB0C37431E024E2B45320B7F2C84490C2C97351FDE34690157';
 
 export class MusixmatchService {
 
@@ -23,7 +22,13 @@ export class MusixmatchService {
                 return initialCache;
             }
 
-            const matchedTrack = await this._searchForBestMatch(originalSongTitle, originalSongArtist, originalSongAlbum, originalSongDuration, userToken);
+            const isIdOnlySearch = (!originalSongTitle || !originalSongArtist) && (songISRC || songPlatformId);
+            if (isIdOnlySearch) {
+                console.debug('ID-only search failed to find a cache match. Aborting Musixmatch search.');
+                return null;
+            }
+
+            const matchedTrack = await this._searchForBestMatch(originalSongTitle, originalSongArtist, originalSongAlbum, originalSongDuration, songISRC, userToken);
             if (!matchedTrack) {
                 console.warn('No suitable track match found in Musixmatch.');
                 return null;
@@ -173,11 +178,14 @@ export class MusixmatchService {
         url.searchParams.set('app_id', 'web-desktop-app-v1.0');
         if (userToken) url.searchParams.set('usertoken', userToken);
 
+        const currentAccount = musixmatchAccountManager.getCurrentAccount();
+        if (!currentAccount) throw new Error('No Musixmatch account available.');
+
         const response = await fetch(url.toString(), {
             headers: {
                 'authority': 'apic-desktop.musixmatch.com',
-                'User-Agent': USER_AGENT,
-                'Cookie': DEFAULT_COOKIE,
+                'User-Agent': currentAccount.USER_AGENT,
+                'Cookie': currentAccount.COOKIE,
                 'Origin': 'https://musixmatch.com',
             }
         });
@@ -189,7 +197,16 @@ export class MusixmatchService {
     
     static async _checkCache(title, artist, album, duration, isrc, platformId, gd, forceReload, requireWordSync) {
         if (forceReload) return null;
-        const file = await FileUtils.findExistingMusixmatch(gd, title, artist, album, duration, isrc, platformId);
+
+        let file;
+        const isIdOnlySearch = (!title || !artist) && (isrc || platformId);
+
+        if (isIdOnlySearch) {
+            file = await FileUtils.findExactMusixmatchByIds(gd, isrc, platformId);
+        } else {
+            file = await FileUtils.findExistingMusixmatch(gd, title, artist, album, duration, isrc, platformId);
+        }
+
         if (file) {
             try {
                 const content = await gd.fetchFile(file.id);
@@ -208,7 +225,7 @@ export class MusixmatchService {
         return null;
     }
 
-    static async _searchForBestMatch(title, artist, album, duration, userToken) {
+    static async _searchForBestMatch(title, artist, album, duration, songISRC, userToken) {
         const queries = [
             `${title} ${artist}`,
             title
@@ -218,11 +235,19 @@ export class MusixmatchService {
             const searchResults = await this.searchTrack(query, userToken);
             const tracks = searchResults.message?.body?.track_list || [];
             if (tracks.length > 0) {
+                if (songISRC) {
+                    for (const t of tracks) {
+                        if (t.track.track_isrc === songISRC) {
+                            return t.track;
+                        }
+                    }
+                }
+
                 candidates.push(...tracks.map(t => ({
                     attributes: { name: t.track.track_name, artistName: t.track.artist_name, albumName: t.track.album_name, durationInMillis: t.track.track_length * 1000 },
                     originalTrack: t.track
                 })));
-                const bestMatch = SimilarityUtils.findBestSongMatch(candidates, title, artist, album, duration);
+                const bestMatch = SimilarityUtils.findBestSongMatch(candidates, title, artist, album, duration, songISRC);
                 if (bestMatch) return bestMatch.candidate.originalTrack;
             }
         }

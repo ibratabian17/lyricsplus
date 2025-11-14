@@ -19,6 +19,12 @@ export class AppleMusicService {
                 return initialCacheResult;
             }
 
+            const isIdOnlySearch = (!originalSongTitle || !originalSongArtist) && (songISRC || songPlatformId);
+            if (isIdOnlySearch) {
+                console.debug('ID-only search failed to find a cache match. Aborting Apple Music search.');
+                return null;
+            }
+
             console.debug('No cached lyrics found, searching Apple Music...');
             const bestMatch = await this._searchForBestMatch(originalSongTitle, originalSongArtist, originalSongAlbum, originalSongDuration);
             if (!bestMatch) {
@@ -249,7 +255,15 @@ export class AppleMusicService {
             return { success: true, data: converted, source: 'apple', rawData: ttmlContent, existingFile: file };
         };
 
-        const existingFile = await FileUtils.findExistingTTML(gd, title, artist, album, duration, isrc, platformId);
+        let existingFile;
+        const isIdOnlySearch = (!title || !artist) && (isrc || platformId);
+
+        if (isIdOnlySearch) {
+            existingFile = await FileUtils.findExactTTMLByIds(gd, isrc, platformId);
+        } else {
+            existingFile = await FileUtils.findExistingTTML(gd, title, artist, album, duration, isrc, platformId);
+        }
+
         if (existingFile) {
             try {
                 const ttmlContent = await gd.fetchFile(existingFile.id);

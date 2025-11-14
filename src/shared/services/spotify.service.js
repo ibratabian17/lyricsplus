@@ -41,7 +41,15 @@ export class SpotifyService {
 
         try {
             const checkCache = async (title, artist, album, duration, isrc, platformId) => {
-                const existingSpotifyFile = await FileUtils.findExistingSp(gd, title, artist, album, duration, isrc, platformId);
+                let existingSpotifyFile;
+                const isIdOnlySearch = (!title || !artist) && (isrc || platformId);
+
+                if (isIdOnlySearch) {
+                    existingSpotifyFile = await FileUtils.findExactSpByIds(gd, isrc, platformId);
+                } else {
+                    existingSpotifyFile = await FileUtils.findExistingSp(gd, title, artist, album, duration, isrc, platformId);
+                }
+
                 if (!forceReload && existingSpotifyFile) {
                     try {
                         const jsonContent = await gd.fetchFile(existingSpotifyFile.id);
@@ -68,6 +76,12 @@ export class SpotifyService {
             if (initialCacheResult) {
                 console.debug('Spotify lyrics found in cache (initial check).');
                 return initialCacheResult;
+            }
+
+            const isIdOnlySearch = (!originalSongTitle || !originalSongArtist) && (songISRC || songPlatformId);
+            if (isIdOnlySearch) {
+                console.debug('ID-only search failed to find a cache match. Aborting Spotify search.');
+                return null;
             }
 
             const spotifyTracks = await this.searchSpotifySong(originalSongTitle, originalSongArtist);

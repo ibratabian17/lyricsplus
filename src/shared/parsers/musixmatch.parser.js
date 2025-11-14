@@ -16,7 +16,7 @@ export function convertMusixmatchToJSON(musixmatchData, requireWordSync = false)
         return null;
     }
 
-    const groupedLyrics = (lyricsType === "Word") ? this.groupWordsIntoLines(v1Lyrics) : v1Lyrics;
+    const groupedLyrics = (lyricsType === "Word") ? _groupWordsIntoLines(v1Lyrics) : v1Lyrics;
 
     return {
         type: lyricsType,
@@ -81,7 +81,7 @@ export function _groupWordsIntoLines(wordLyrics) {
     let currentLine = null;
     wordLyrics.forEach(word => {
         if (!currentLine) {
-            currentLine = { time: word.time, text: "", syllabus: [], element: {} };
+            currentLine = { time: word.time, duration: 0, text: "", syllabus: [], element: {} };
         }
         currentLine.text += word.text;
         currentLine.syllabus.push({ time: word.time, duration: word.duration, text: word.text });

@@ -14,12 +14,12 @@ app.get('/', (c) => c.text('Seems, you trying to find out about our api huh?'));
 
 // Lyrics routes
 app.get('/v1/lyrics/get', (c) => {
-    c.req.query().format = 'v1';
+    c.set('format', 'v1');
     return handleLyricsRequest(c);
 });
 app.get('/v2/lyrics/get', handleLyricsRequest);
 app.get('/v1/ttml/get', (c) => {
-    c.req.query().format = 'ttml';
+    c.set('format', 'ttml');
     return handleLyricsRequest(c);
 });
 

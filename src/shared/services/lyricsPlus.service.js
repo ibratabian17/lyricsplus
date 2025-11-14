@@ -10,7 +10,15 @@ export class LyricsPlusService {
      */
     static async fetchLyrics(songTitle, songArtist, songAlbum, songDuration, songISRC, songPlatformId, gd) {
         try {
-            const userJsonFile = await FileUtils.findUserJSON(gd, songTitle, songArtist, songAlbum, songDuration, songISRC, songPlatformId);
+            let userJsonFile;
+            const isIdOnlySearch = (!songTitle || !songArtist) && (songISRC || songPlatformId);
+
+            if (isIdOnlySearch) {
+                userJsonFile = await FileUtils.findExactUserJSONByIds(gd, songISRC, songPlatformId);
+            } else {
+                userJsonFile = await FileUtils.findUserJSON(gd, songTitle, songArtist, songAlbum, songDuration, songISRC, songPlatformId);
+            }
+            
             if (userJsonFile) {
                 const jsonContent = await gd.fetchFile(userJsonFile.id);
                 if (jsonContent) {

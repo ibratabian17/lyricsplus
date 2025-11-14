@@ -157,7 +157,14 @@ export async function handleSongLyrics(
     const initialFileName = await FileUtils.generateUniqueFileName(songTitle, songArtist, songAlbum, songDuration, songISRC, songPlatformId);
     console.debug('Looking for:', initialFileName, forceReload ? '(Force reload enabled)' : '');
 
-    const sources = preferredSources.length > 0 ? preferredSources : ['apple', 'lyricsplus', 'musixmatch-word', 'musixmatch', 'spotify'];
+    let sources;
+    const isIdOnlySearch = (!songTitle || !songArtist) && (songISRC || songPlatformId);
+
+    if (isIdOnlySearch) {
+        sources = ['apple', 'lyricsplus', 'musixmatch', 'spotify'];
+    } else {
+        sources = preferredSources.length > 0 ? preferredSources : ['apple', 'lyricsplus', 'musixmatch-word', 'musixmatch', 'spotify'];
+    }
     
     const promises = [];
     sources.forEach(source => {

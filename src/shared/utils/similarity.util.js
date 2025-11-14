@@ -218,13 +218,23 @@ export class SimilarityUtils {
         return this.getDiceCoefficient(norm1, norm2);
     }
 
-    static calculateSongSimilarity(candidate, queryTitle, queryArtist, queryAlbum, queryDuration) {
+    static calculateSongSimilarity(candidate, queryTitle, queryArtist, queryAlbum, queryDuration, queryISRC, queryPlatformId) {
         const attrs = candidate?.attributes || candidate;
         if (!attrs) return { score: 0, reason: 'Invalid candidate' };
 
         const candTitle = attrs.name || attrs.title || '';
         const candArtist = attrs.artistName || attrs.artist || '';
         const candAlbum = attrs.albumName || attrs.album || '';
+        const candISRC = attrs.isrc;
+        const candPlatformId = attrs.platformId;
+
+        if (queryISRC && candISRC && queryISRC === candISRC) {
+            return { score: 1.0, reason: 'Exact ISRC match' };
+        }
+
+        if (queryPlatformId && candPlatformId && queryPlatformId === candPlatformId) {
+            return { score: 1.0, reason: 'Exact Platform ID match' };
+        }
 
         if (!candTitle || !candArtist) {
             return { score: 0, reason: 'Missing title or artist' };
@@ -317,7 +327,7 @@ export class SimilarityUtils {
         };
     }
 
-    static findBestSongMatch(candidates, queryTitle, queryArtist, queryAlbum, queryDuration) {
+    static findBestSongMatch(candidates, queryTitle, queryArtist, queryAlbum, queryDuration, songISRC, songPlatformId) {
         if (!candidates?.length || !queryTitle) return null;
 
         const validCandidates = candidates.filter(c => {
@@ -333,7 +343,7 @@ export class SimilarityUtils {
 
         const scoredCandidates = validCandidates.map(candidate => {
             const scoreInfo = this.calculateSongSimilarity(
-                candidate, queryTitle, queryArtist, queryAlbum, queryDuration
+                candidate, queryTitle, queryArtist, queryAlbum, queryDuration, songISRC, songPlatformId
             );
             return { candidate, scoreInfo };
         });

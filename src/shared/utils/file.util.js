@@ -90,6 +90,49 @@ export class FileUtils {
     }
 
     /**
+     * Searches for an existing file on Google Drive based on an exact match of ISRC or platform ID.
+     * @param {object} gd - An authenticated Google Drive API instance.
+     * @param {string|null} songISRC - The ISRC of the song to search for.
+     * @param {string|null} songPlatformId - The platform-specific ID of the song.
+     * @param {string} folderID - The ID of the Google Drive folder to search in.
+     * @param {string} mimeType - The MIME type of the file to search for.
+     * @returns {Promise<object|null>} The matching file object or null if not found.
+     */
+    static async findExactMatchByIds(gd, songISRC, songPlatformId, folderID, mimeType) {
+        if (!gd) throw new Error("Google Drive instance is not provided.");
+        if (!folderID) throw new Error("Folder ID is not provided.");
+        if (!mimeType) throw new Error("MIME type is not provided.");
+        if (!songISRC && !songPlatformId) return null;
+
+        try {
+            let queryParts = [`mimeType = '${mimeType}'`, `'${folderID}' in parents`];
+            let searchTerm = songISRC || songPlatformId;
+
+            queryParts.push(`name contains '${searchTerm}'`);
+
+            const query = queryParts.join(' and ');
+            const { files } = await gd.searchFiles(query);
+
+            if (!files || files.length === 0) return null;
+
+            for (const file of files) {
+                const parsed = FileUtils._parseFileName(file.name);
+                if (songISRC && parsed.isrc === songISRC) {
+                    return file;
+                }
+                if (songPlatformId && parsed.platformId === songPlatformId) {
+                    return file;
+                }
+            }
+
+            return null;
+        } catch (error) {
+            console.error("Error searching for exact match by ID:", error);
+            return null;
+        }
+    }
+
+    /**
      * Searches for an existing file on Google Drive based on song metadata.
      * @param {object} gd - An authenticated Google Drive API instance.
      * @param {string} songTitle - The title of the song to search for.
@@ -176,6 +219,22 @@ export class FileUtils {
 
     static async findUserJSON(gd, songTitle, songArtist, songAlbum, songDuration, songISRC, songPlatformId) {
         return this.findExistingFile(gd, songTitle, songArtist, songAlbum, songDuration, songISRC, songPlatformId, GDRIVE.USERTML_JSON, 'application/json');
+    }
+
+    static async findExactTTMLByIds(gd, songISRC, songPlatformId) {
+        return this.findExactMatchByIds(gd, songISRC, songPlatformId, GDRIVE.CACHED_TTML, 'application/xml');
+    }
+
+    static async findExactSpByIds(gd, songISRC, songPlatformId) {
+        return this.findExactMatchByIds(gd, songISRC, songPlatformId, GDRIVE.CACHED_SPOTIFY, 'application/json');
+    }
+
+    static async findExactMusixmatchByIds(gd, songISRC, songPlatformId) {
+        return this.findExactMatchByIds(gd, songISRC, songPlatformId, GDRIVE.CACHED_MUSIXMATCH, 'application/json');
+    }
+
+    static async findExactUserJSONByIds(gd, songISRC, songPlatformId) {
+        return this.findExactMatchByIds(gd, songISRC, songPlatformId, GDRIVE.USERTML_JSON, 'application/json');
     }
 
     // --- JSON Content Checks ---

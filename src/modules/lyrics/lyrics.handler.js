@@ -10,19 +10,23 @@ export async function handleLyricsRequest(c) {
     const query = c.req.query();
     const songTitle = query.title;
     const songArtist = query.artist;
-    const format = query.format || 'v2';
+    const format = c.get('format') || query.format || 'v2';
 
-    if (!songTitle || !songArtist ) {
+    const songISRC = query.isrc;
+    const songPlatformId = query.platformId;
+
+    if ((!songTitle || !songArtist) && !songISRC && !songPlatformId) {
         return c.json(
-            { error: "Missing required parameters: title and artist" },
+            {
+                error:
+                    "Missing required parameters: (title and artist) or isrc or platformId",
+            },
             400
         );
     }
 
     const songAlbum = query.album || "";
     const songDuration = query.duration;
-    const songISRC = query.isrc;
-    const songPlatformId = query.platformId;
     const source = query.source;
     const forceReload = query.forceReload === "true";
 
