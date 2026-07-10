@@ -2,6 +2,8 @@
 
 This is the backend service for LyricsPlus, primarily functioning as a lyrics scraper and provider for Youly+. Its main purpose is to fetch platform-specific lyrics timelines for users.
 
+Due too high request traffic, the main server `https://lyricsplus.prjktla.my.id` unable to serve the lyrics properly. this project requires funding to run on a better server. I'm currently unable to cover the costs due to financial constraints. If you're interested in lending us your server, please feel free to do so.
+
 ## Features
 
 *   **Multi-Source Scraping**: Aggregates lyrics from various sources (e.g., Apple Music, Musixmatch, Spotify, QQ Music).
